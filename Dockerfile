@@ -17,4 +17,6 @@ EXPOSE 9000
 ENV FLASK_APP=app.py
 
 # Run app.py when the container launches
-CMD ["flask", "run", "--host=0.0.0.0", "--port=9000"]
+CMD ["flask", "--debug", "run", "--host=0.0.0.0", "--port", "9000"] 
+# "--host=0.0.0.0"
+# CMD [ "python", "app.py", "-m" , "flask", "run"]

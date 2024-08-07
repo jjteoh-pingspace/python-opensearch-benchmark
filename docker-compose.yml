@@ -1,0 +1,35 @@
+services:
+  opensearch:
+    image: opensearchproject/opensearch:latest
+    container_name: opensearch
+    # restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=Abc_12345678@
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    networks:
+      - opensearch-demo
+
+  opensearch-benchmark:
+    build: .
+    image: python-opensearch-benchmark
+    container_name: opensearch-benchmark
+    # env_file: .env
+    environment:
+      # - OPENSEARCH_URL=https://opensearch:9200
+      - OPENSEARCH_HOST=opensearch
+      - OPENSEARCH_PORT=9200
+      - OPENSEARCH_USER=admin
+      - OPENSEARCH_PASSWORD=Abc_12345678@
+    ports:
+      - "9000:9000"
+    depends_on:
+      - opensearch
+    networks:
+      - opensearch-demo
+
+networks:
+  opensearch-demo:
+    driver: bridge

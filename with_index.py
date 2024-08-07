@@ -16,9 +16,10 @@ def write_data():
 
     data = request.get_json()
     seed: int = data.get('seed', 0)
-    start_time = time.time()
 
     before_count = es.count(index=INDEX)["count"]
+
+    start_time = time.time()
 
     for _ in range(seed):
         es.index(index=INDEX, body=generate_dummy_data())
@@ -34,7 +35,7 @@ def write_data():
     })
 
 
-# GET /with-index/write
+# GET /with-index/read
 @with_index_bp.route('/read', methods=['GET'])
 def read_data():
     skycar = request.args.get('skycar')
@@ -56,13 +57,32 @@ def read_data():
         })
 
     start_time = time.time()
-    result = es.search(index=INDEX, body={"query": query, "size": 20})
+
+    result = []
+    if es.indices.exists(index=INDEX):
+        result = es.search(index=INDEX, body={"query": query, "size": 20})
+
     elapsed_time = time.time() - start_time
+
+    count = es.count(index=INDEX)["count"]
 
     return jsonify({
         "result": [hit["_source"] for hit in result["hits"]["hits"]],
         "limit": 20,
-        "elapsed_time_sec": elapsed_time
+        "elapsed_time_sec": elapsed_time,
+        "total_in_db": count
+    })
+
+
+# GET /with-index/count
+@with_index_bp.route('/count', methods=['GET'])
+def count_data():
+    count = 0
+    if es.indices.exists(index=INDEX):
+        count = es.count(index=INDEX)["count"]
+
+    return jsonify({
+        'count': count
     })
 
 
