@@ -41,13 +41,14 @@ def read_data():
     skycar = request.args.get('skycar')
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    limit = request.args.get('limit', 20, type=int)
 
-    query = {"bool": {"must": []}}
+    query = {"query": {"bool": {"must": []}}}
 
     if skycar:
-        query["bool"]["must"].append({"term": {"skycar": int(skycar)}})
+        query["query"]["bool"]["must"].append({"term": {"skycar": int(skycar)}})
     if start_date and end_date:
-        query["bool"]["must"].append({
+        query["query"]["bool"]["must"].append({
             "range": {
                 "created": {
                     "gte": start_date,
@@ -56,19 +57,25 @@ def read_data():
             }
         })
 
+    # If limit is -1, do not set a size limit
+    if limit != -1:
+        query["size"] = limit
+
     start_time = time.time()
 
     result = []
     if es.indices.exists(index=INDEX):
-        result = es.search(index=INDEX, body={"query": query, "size": 20})
+        result = es.search(index=INDEX, body=query)
 
     elapsed_time = time.time() - start_time
 
     count = es.count(index=INDEX)["count"]
-
+    
+    matched = [hit["_source"] for hit in result["hits"]["hits"]]
     return jsonify({
-        "result": [hit["_source"] for hit in result["hits"]["hits"]],
-        "limit": 20,
+        "result": matched,
+        "page_size": len(matched),
+        "limit": limit,
         "elapsed_time_sec": elapsed_time,
         "total_in_db": count
     })
